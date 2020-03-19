@@ -4,7 +4,7 @@ open System
 
 let NumRows = 6
 let NumCols = 7
-let NumToWin = 5
+let NumToWin = 4
 
 let makeBoard =
      Array2D.init<char> NumRows NumCols (fun row col -> ' ')
@@ -46,7 +46,7 @@ let addCharToCol board player colIndex =
     
     let rec _addCharToCol board player colIndex currRow =
         match currRow with
-        | currRow when currRow >= (Array2D.length2 board - 1) -> true
+        | currRow when currRow >= (Array2D.length1 board) -> true
         | currRow when (board.[currRow, colIndex] = 'X') || (board.[currRow, colIndex] = 'O') -> true
         | currRow when (_addCharToCol board player colIndex (currRow + 1)) -> (board.[currRow, colIndex] <- player)
                                                                               false
@@ -204,7 +204,7 @@ let checkForWinnerInList L =
     
 let isWinner board =
     let allPossibleWinPaths = (getAllCols board) @ (getAllRows board) @ (getAllDiagonalForward board) @ (getAllDiagonalBackward board)
-    
+//    printfn "%A" (getAllRows board)
     let rec _checkAllWinPaths allPossibleWinPaths =
         match allPossibleWinPaths with
         | [] -> false
@@ -213,7 +213,18 @@ let isWinner board =
     
     _checkAllWinPaths allPossibleWinPaths
     
-     
+//let isTie board =
+//    let matrixWidth = (Array2D.length2 board) //the length of a row (left and right)
+//    let matrixHeight = (Array2D.length1 board) //the length of a col (height)
+//    
+//    let rowIndexList = [0..(matrixHeight - 1)] //index of each row (up and down)
+//    let colIndexList = [0..(matrixWidth - 1)] //index of each col (left and right)
+//
+//    let topRow = (getRow board colIndexList 0 [])
+//    printfn "%A" topRow
+//    if (List.tryFind (fun c -> c = ' ') topRow) <> None then false else  printfn("There was a tie. No one wins obviously.")
+//                                                                         true
+//     
 [<EntryPoint>]
 let main argv =
     printfn "Connect 4. Prepare to have fun."
@@ -231,9 +242,11 @@ let main argv =
         
         printBoard board false
         
-        let gameOver = (isWinner board)
+        let isWinner = (isWinner board)
         
-        match gameOver with
+//        let isTie = (isTie board)
+        
+        match (isWinner) with
         | true -> printfn "Game Over. We are done here."
                   printBoard board true
         | false -> _playGame board (opposite playerTurn)
