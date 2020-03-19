@@ -4,7 +4,7 @@ open System
 
 let NumRows = 6
 let NumCols = 7
-let NumToWin = 4
+let NumToWin = 5
 
 let makeBoard =
      Array2D.init<char> NumRows NumCols (fun row col -> ' ')
@@ -56,7 +56,10 @@ let addCharToCol board player colIndex =
     ()
 
 let rec playerMakeMove board player=
-    Console.WriteLine()
+    printf "Player "
+    printf "%c" player
+    printfn " make a move."
+    
     let targetCol = Console.ReadLine() |> int
     
     if targetCol > Array2D.length1 board then printfn "Illegal move. try again"
@@ -70,23 +73,19 @@ let rec playerMakeMove board player=
                                                                      playerMakeMove board player
     
     addCharToCol board player targetCol
-                                                                     
-    
-    
+                                                                      
 let opposite player =
     match player with
     | 'X' -> 'O'
     | 'O' -> 'X'
     | _ -> 'Q'
-   
-   
+      
 let rec getCol (board: char[,]) rowIndexList (colIndex: int) answer=
 //    board.[*, colIndex]
     match rowIndexList with
     | [] -> answer
     | hd::tl -> getCol board tl colIndex (board.[hd, colIndex] :: answer) 
 
-   
 let getAllCols board =
     let matrixWidth = (Array2D.length2 board) //the length of a row (left and right)
     let matrixHeight = (Array2D.length1 board) //the length of a col (height)
@@ -102,50 +101,127 @@ let getAllCols board =
   
     _getAllCols board colIndexList []
 
+let rec getRow (board: char [,]) colIndexList (rowIndex: int) answer =
+    match colIndexList with
+    | [] -> answer
+    | hd::tl -> getRow board tl rowIndex (board.[rowIndex, hd] :: answer)
+
+let getAllRows board =
+    let matrixWidth = (Array2D.length2 board) //the length of a row (left and right)
+    let matrixHeight = (Array2D.length1 board) //the length of a col (height)
+    
+    let rowIndexList = [0..(matrixHeight - 1)] //index of each row (up and down)
+    let colIndexList = [0..(matrixWidth - 1)] //index of each col (left and right)
+    
+    //go over each rows
+    let rec _getAllRows board rowIndexList listOfRows =
+        match rowIndexList with
+        | [] -> listOfRows
+        | hd::tl -> _getAllRows board tl (listOfRows @ [( getRow board colIndexList hd [] )]  )
+  
+    _getAllRows board rowIndexList []
+
+let allCombinations max =
+    
+    let allValues2 = [0..(max - 1)]
+    
+    let rec _getTuplesGivenHd allValues givenHd acc =
+        match allValues with
+        | [] -> acc
+        | hd::tl -> 
+                    _getTuplesGivenHd tl givenHd ((givenHd, hd) :: acc) 
+        
+    
+    let rec _allCombinations allValues acc =
+        match allValues with
+        | [] -> acc
+        | hd::tl -> _allCombinations tl (_getTuplesGivenHd allValues2 hd [] @ acc)
+
+    _allCombinations allValues2 []
+    
+
+let getAllDiagonalForward (board: char [,]) =
+//    printfn "hey1"
+    let dimensionList = [NumCols; NumRows]
+    let allCombos = allCombinations (List.max dimensionList) 
+    let acceptableCombos = List.filter (fun (x, y) -> x < NumCols && y < NumRows) allCombos
+    
+    
+    let allDiagonalSums = [0..(NumRows + NumCols - 2)]
+    
+    let rec _getDiagonals allDiagonalSums list =
+//        printfn "Het"
+        match allDiagonalSums with
+        | [] -> list
+        | hd::tl -> _getDiagonals tl (let diag = List.filter (fun (x, y) -> (x + y) = hd) acceptableCombos
+//                                      printfn "%A" diag
+                                      List.map (fun (x, y) -> board.[y, x]) diag :: list
+                                     )
+    _getDiagonals allDiagonalSums []                                                 
+
+let xMap x =
+    abs(x - (NumCols - 1))
+    
+
+let getAllDiagonalBackward (board: char [,]) =
+//    printfn "hey1"
+    let dimensionList = [NumCols; NumRows]
+    let allCombos = allCombinations (List.max dimensionList) 
+    let acceptableCombos = List.filter (fun (x, y) -> x < NumCols && y < NumRows) allCombos
+    
+    
+    let allDiagonalSums = [0..(NumRows + NumCols - 2)]
+    
+    let rec _getDiagonals allDiagonalSums list =
+//        printfn "Het"
+        match allDiagonalSums with
+        | [] -> list
+        | hd::tl -> _getDiagonals tl (let diag = List.filter (fun (x, y) -> (x + y) = hd) acceptableCombos
+//                                      printfn "%A" diag
+                                      List.map (fun (x, y) -> board.[y, xMap (x)]) diag :: list
+                                     )
+    _getDiagonals allDiagonalSums [] 
+
 let printWinMsg player =
     printf "Player "
     printf "%c" player
     printfn " Won. Yay."
 
 let checkForWinnerInList L =
-    let streak = 0
+    
     let rec _checkForWinnerInList L streak player =
-        match L with
+        match L  with
         | [] -> false
-        | hd::tl when hd = ' ' -> _checkForWinnerInList tl 0 player
-        | hd::tl when hd = player && (streak + 1) = NumToWin -> printWinMsg player
-                                                                true
+        | hd::tl when hd <> 'X' && hd <> 'O' -> _checkForWinnerInList tl 0 player
+        | hd::_ when hd = player && (streak + 1) = NumToWin -> printWinMsg player
+                                                               true
         | hd::tl when hd = player -> _checkForWinnerInList tl (streak + 1) (player)
         | hd::tl when hd <> player -> _checkForWinnerInList tl 1 (hd)
-    
+        | _ ->  printfn "Case: some weird char appears?"
+                false
+        
     _checkForWinnerInList L 0 'X'
     
-        
-
-let isWinner board numToWin =
-    true
+let isWinner board =
+    let allPossibleWinPaths = (getAllCols board) @ (getAllRows board) @ (getAllDiagonalForward board) @ (getAllDiagonalBackward board)
+    
+    let rec _checkAllWinPaths allPossibleWinPaths =
+        match allPossibleWinPaths with
+        | [] -> false
+        | hd::tl when (checkForWinnerInList hd) -> true
+        | _::tl -> _checkAllWinPaths tl
+    
+    _checkAllWinPaths allPossibleWinPaths
+    
      
-
 [<EntryPoint>]
 let main argv =
     printfn "Connect 4. Prepare to have fun."
     
     let board = makeBoard
     
-    addCharToCol board 'X' 0
-    addCharToCol board 'O' 0
-    addCharToCol board 'O' 0
-    addCharToCol board 'O' 0
-
-    printfn "%A" "sup "
-    printfn "%A" (getCol board [0..5] 0 [])
-    
     printBoard board false
 //    printBoard board true
-    
-    
-    
-    printfn "%A" (getAllCols board)
     
     let rec _playGame board playerTurn =
         match playerTurn with
@@ -153,13 +229,15 @@ let main argv =
         | 'O' -> playerMakeMove board 'O'
         | _ -> ()
         
-        let gameOver = isWinner board NumToWin
+        printBoard board false
+        
+        let gameOver = (isWinner board)
         
         match gameOver with
         | true -> printfn "Game Over. We are done here."
+                  printBoard board true
         | false -> _playGame board (opposite playerTurn)
         
-        printBoard board true
         
     _playGame board 'O'
     
