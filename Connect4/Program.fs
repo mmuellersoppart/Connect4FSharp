@@ -10,14 +10,37 @@ let makeBoard =
      Array2D.init<char> NumRows NumCols (fun row col -> ' ')
 
 //https://en.wikibooks.org/wiki/F_Sharp_Programming/Arrays
-let printBoard board =
+let printBoard board isOver =
+    
     let maxY = (Array2D.length1 board) - 1
     let maxX = (Array2D.length2 board) - 1
     
-    for row in 0 .. maxY do
-        for col in 0 .. maxX do
-            printf "%A" board.[row, col] 
-        Console.WriteLine()
+    match isOver with
+    | true -> for row in 0 .. maxY do
+                for col in 0 .. maxX do    
+                    printf "| "
+                    printf "%c" ' '
+                    printf " "
+                Console.WriteLine()
+    | false -> for row in 0 .. maxY do
+                 for col in 0 .. maxX do
+                    printf "| "
+                    printf "%c" board.[row, col]
+                    printf " "
+                 Console.WriteLine()
+    
+    match isOver with
+    | false -> printfn "---------------------------"
+    | true -> printfn "  O      X    O    X     O   "
+              printfn "      O    O     X      O   "
+              printfn "           X      X        O   "
+              printfn "  X             O      X         X"
+              printfn "      O            O     X    O "
+              printfn "                X           X     O "
+              printfn "            X    X           X     O "
+              printfn "                      O               O "
+              printfn "                  O            X           X"
+              printfn "                       O                  "
 
 let addCharToCol board player colIndex =
     
@@ -38,12 +61,12 @@ let rec playerMakeMove board player=
     
     if targetCol > Array2D.length1 board then printfn "Illegal move. try again"
                                               Console.WriteLine()
-                                              printBoard board
+                                              printBoard board false
                                               playerMakeMove board player
                                               
     if board.[0, targetCol] = 'O' || board.[0, targetCol] = 'X' then printfn "column full. try again."
                                                                      Console.WriteLine()
-                                                                     printBoard board
+                                                                     printBoard board false
                                                                      playerMakeMove board player
     
     addCharToCol board player targetCol
@@ -78,7 +101,27 @@ let getAllCols board =
         | hd::tl -> _getAllCols board tl (listOfCols @ [( getCol board rowIndexList hd [] )]  )
   
     _getAllCols board colIndexList []
-   
+
+let printWinMsg player =
+    printf "Player "
+    printf "%c" player
+    printfn " Won. Yay."
+
+let checkForWinnerInList L =
+    let streak = 0
+    let rec _checkForWinnerInList L streak player =
+        match L with
+        | [] -> false
+        | hd::tl when hd = ' ' -> _checkForWinnerInList tl 0 player
+        | hd::tl when hd = player && (streak + 1) = NumToWin -> printWinMsg player
+                                                                true
+        | hd::tl when hd = player -> _checkForWinnerInList tl (streak + 1) (player)
+        | hd::tl when hd <> player -> _checkForWinnerInList tl 1 (hd)
+    
+    _checkForWinnerInList L 0 'X'
+    
+        
+
 let isWinner board numToWin =
     true
      
@@ -97,7 +140,8 @@ let main argv =
     printfn "%A" "sup "
     printfn "%A" (getCol board [0..5] 0 [])
     
-    printBoard board
+    printBoard board false
+//    printBoard board true
     
     
     
@@ -115,7 +159,7 @@ let main argv =
         | true -> printfn "Game Over. We are done here."
         | false -> _playGame board (opposite playerTurn)
         
-        printBoard board
+        printBoard board true
         
     _playGame board 'O'
     
