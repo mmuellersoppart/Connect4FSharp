@@ -2,8 +2,12 @@
 
 open System
 
-let makeBoard numRows numCols =
-     Array2D.init<char> numRows numCols (fun row col -> ' ')
+let NumRows = 6
+let NumCols = 7
+let NumToWin = 4
+
+let makeBoard =
+     Array2D.init<char> NumRows NumCols (fun row col -> ' ')
 
 //https://en.wikibooks.org/wiki/F_Sharp_Programming/Arrays
 let printBoard board =
@@ -15,7 +19,7 @@ let printBoard board =
             printf "%A" board.[row, col] 
         Console.WriteLine()
 
-let addCharToCol board (player: char) (colIndex: int) =
+let addCharToCol board player colIndex =
     
     let rec _addCharToCol board player colIndex currRow =
         match currRow with
@@ -27,7 +31,6 @@ let addCharToCol board (player: char) (colIndex: int) =
         
     _addCharToCol board player colIndex 0 |> ignore
     ()
-    
 
 let rec playerMakeMove board player=
     Console.WriteLine()
@@ -53,7 +56,30 @@ let opposite player =
     | 'O' -> 'X'
     | _ -> 'Q'
    
-let isWinner board =
+   
+let rec getCol (board: char[,]) rowIndexList (colIndex: int) answer=
+//    board.[*, colIndex]
+    match rowIndexList with
+    | [] -> answer
+    | hd::tl -> getCol board tl colIndex (board.[hd, colIndex] :: answer) 
+
+   
+let getAllCols board =
+    let matrixWidth = (Array2D.length2 board) //the length of a row (left and right)
+    let matrixHeight = (Array2D.length1 board) //the length of a col (height)
+    
+    let rowIndexList = [0..(matrixHeight - 1)] //index of each row (up and down)
+    let colIndexList = [0..(matrixWidth - 1)] //index of each col (left and right)
+    
+    //go over each col
+    let rec _getAllCols board colIndexList listOfCols =
+        match colIndexList with
+        | [] -> listOfCols
+        | hd::tl -> _getAllCols board tl (listOfCols @ [( getCol board rowIndexList hd [] )]  )
+  
+    _getAllCols board colIndexList []
+   
+let isWinner board numToWin =
     true
      
 
@@ -61,17 +87,21 @@ let isWinner board =
 let main argv =
     printfn "Connect 4. Prepare to have fun."
     
-    let NumRows = 6
-    let NumCols = 7
+    let board = makeBoard
     
-    let board = makeBoard NumRows NumCols
-    
-    addCharToCol board 'X' 0 
-    addCharToCol board 'X' 0 
-    addCharToCol board 'O' 0 
-    addCharToCol board 'X' 1 
+    addCharToCol board 'X' 0
+    addCharToCol board 'O' 0
+    addCharToCol board 'O' 0
+    addCharToCol board 'O' 0
+
+    printfn "%A" "sup "
+    printfn "%A" (getCol board [0..5] 0 [])
     
     printBoard board
+    
+    
+    
+    printfn "%A" (getAllCols board)
     
     let rec _playGame board playerTurn =
         match playerTurn with
@@ -79,7 +109,7 @@ let main argv =
         | 'O' -> playerMakeMove board 'O'
         | _ -> ()
         
-        let gameOver = isWinner board
+        let gameOver = isWinner board NumToWin
         
         match gameOver with
         | true -> printfn "Game Over. We are done here."
