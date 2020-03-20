@@ -3,13 +3,25 @@
 //ob - connect 4
 
 open System
+open System
+open System
 
+//configurable settings
 let NumRows = 6
 let NumCols = 8
 let NumToWin = 4
 
 let makeBoard =
-     Array2D.init<char> NumRows NumCols (fun row col -> ' ')
+     Array2D.init<char> NumRows NumCols (fun _ _ -> ' ')
+
+let printDivider num =
+    let rec _printDivider numOfCols =
+        match numOfCols with
+        | 0 -> ()
+        | _ -> printf "----"
+               _printDivider (numOfCols - 1)
+    _printDivider (NumCols - 1)
+    printfn "-----"
 
 //https://en.wikibooks.org/wiki/F_Sharp_Programming/Arrays
 let printBoard board isOver =
@@ -19,22 +31,23 @@ let printBoard board isOver =
     
     match isOver with
     | true -> for row in 0 .. maxY do
+                printDivider 4
                 for col in 0 .. maxX do    
                     printf "| "
                     printf "%c" ' '
                     printf " "
-                printf "|"
-                Console.WriteLine()
+                printfn "|"
+                
     | false -> for row in 0 .. maxY do
+                 printDivider 4
                  for col in 0 .. maxX do
                     printf "| "
                     printf "%c" board.[row, col]
                     printf " "
-                 printf "|"
-                 Console.WriteLine()
-    
+                 printfn "|"
+                
     match isOver with
-    | false -> printfn "-----------------------------"
+    | false -> printDivider 4
     | true -> printfn "  O      X    O    X     O   "
               printfn "      O    O     X      O   "
               printfn "           X      X        O   "
@@ -64,9 +77,8 @@ let rec playerMakeMove board player=
     printf "%c" player
     printfn " make a move."
     
-    
     let targetCol = Console.ReadLine() |> int
-
+    
     if targetCol >=  NumCols then printfn "Illegal move. try again"
                                   Console.WriteLine()
                                   printBoard board false
@@ -234,7 +246,7 @@ let isWinner board =
 [<EntryPoint>]
 let main argv =
     printfn "Connect 4. Prepare to have fun."
-    
+            
     let board = makeBoard
     
     printBoard board false
