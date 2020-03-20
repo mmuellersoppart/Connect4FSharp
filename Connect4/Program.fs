@@ -1,4 +1,6 @@
-﻿// Learn more about F# at http://fsharp.org
+﻿//Marlon Mueller-Soppart
+//20200319
+//ob - connect 4
 
 open System
 
