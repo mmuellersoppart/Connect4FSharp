@@ -5,7 +5,7 @@
 open System
 
 let NumRows = 6
-let NumCols = 7
+let NumCols = 8
 let NumToWin = 4
 
 let makeBoard =
@@ -23,16 +23,18 @@ let printBoard board isOver =
                     printf "| "
                     printf "%c" ' '
                     printf " "
+                printf "|"
                 Console.WriteLine()
     | false -> for row in 0 .. maxY do
                  for col in 0 .. maxX do
                     printf "| "
                     printf "%c" board.[row, col]
                     printf " "
+                 printf "|"
                  Console.WriteLine()
     
     match isOver with
-    | false -> printfn "---------------------------"
+    | false -> printfn "-----------------------------"
     | true -> printfn "  O      X    O    X     O   "
               printfn "      O    O     X      O   "
               printfn "           X      X        O   "
@@ -62,19 +64,21 @@ let rec playerMakeMove board player=
     printf "%c" player
     printfn " make a move."
     
+    
     let targetCol = Console.ReadLine() |> int
-    
-    if targetCol > Array2D.length1 board then printfn "Illegal move. try again"
-                                              Console.WriteLine()
-                                              printBoard board false
-                                              playerMakeMove board player
+
+    if targetCol >=  NumCols then printfn "Illegal move. try again"
+                                  Console.WriteLine()
+                                  printBoard board false
+                                  playerMakeMove board player
                                               
-    if board.[0, targetCol] = 'O' || board.[0, targetCol] = 'X' then printfn "column full. try again."
-                                                                     Console.WriteLine()
-                                                                     printBoard board false
-                                                                     playerMakeMove board player
-    
-    addCharToCol board player targetCol
+    elif board.[0, targetCol] = 'O' || board.[0, targetCol] = 'X' then printfn "column full. try again."
+                                                                       Console.WriteLine()
+                                                                       printBoard board false
+                                                                       playerMakeMove board player
+                                                              
+    else addCharToCol board player targetCol
+    ()
                                                                       
 let opposite player =
     match player with
