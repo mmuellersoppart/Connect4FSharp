@@ -2,6 +2,7 @@
 //20200321
 
 # What is this program?
+
 A configurable, command-line version of Connect 4. It allows for custom amounts of rows, columns, and win-streaks[1].
 \
 [1] so this is actually Connect x where x is in NN
