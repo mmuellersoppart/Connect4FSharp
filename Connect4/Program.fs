@@ -3,6 +3,7 @@
 //ob - connect 4
 
 open System
+open System.Threading
 
 //configurable settings
 let NumRows = 6
@@ -155,7 +156,10 @@ let allCombinations max =
 
     _allCombinations allValues []
 
-let getAllDiagonalForward (board: char [,]) =
+let xMap x =
+    abs(x - (NumCols - 1))
+
+let getAllDiagonal (board: char [,]) =
     let dimensionList = [NumCols; NumRows]
     let allCombos = allCombinations (List.max dimensionList) 
     let acceptableCombos = List.filter (fun (x, y) -> x < NumCols && y < NumRows) allCombos
@@ -163,42 +167,24 @@ let getAllDiagonalForward (board: char [,]) =
     let allDiagonalSums = [0..(NumRows + NumCols - 2)]
     
     let rec _getDiagonals allDiagonalSums list =
-//        printfn "Het"
         match allDiagonalSums with
         | [] -> list
-        | hd::tl -> _getDiagonals tl (let diag = List.filter (fun (x, y) -> (x + y) = hd) acceptableCombos
-//                                      printfn "%A" diag
-                                      List.map (fun (x, y) -> board.[y, x]) diag :: list
+        | hd::tl -> _getDiagonals tl ( let diag = List.filter (fun (x, y) -> (x + y) = hd) acceptableCombos
+                                       let forwardSlashDiags = List.map (fun (x, y) -> board.[y, x]) diag
+                                       let backSlashDiags = List.map (fun (x, y) -> board.[y, (xMap x)]) diag
+                                       forwardSlashDiags :: backSlashDiags :: list
                                      )
     _getDiagonals allDiagonalSums []                                                 
 
-let xMap x =
-    abs(x - (NumCols - 1))
-    
-
-let getAllDiagonalBackward (board: char [,]) =
-//    printfn "hey1"
-    let dimensionList = [NumCols; NumRows]
-    let allCombos = allCombinations (List.max dimensionList) 
-    let acceptableCombos = List.filter (fun (x, y) -> x < NumCols && y < NumRows) allCombos
-    
-    
-    let allDiagonalSums = [0..(NumRows + NumCols - 2)]
-    
-    let rec _getDiagonals allDiagonalSums list =
-//        printfn "Het"
-        match allDiagonalSums with
-        | [] -> list
-        | hd::tl -> _getDiagonals tl (let diag = List.filter (fun (x, y) -> (x + y) = hd) acceptableCombos
-//                                      printfn "%A" diag
-                                      List.map (fun (x, y) -> board.[y, xMap (x)]) diag :: list
-                                     )
-    _getDiagonals allDiagonalSums [] 
-
 let printWinMsg player =
-    printf "Player "
-    printf "%c" player
-    printfn " Won. Yay."
+    Console.WriteLine()
+    printfn "***********************************************************"
+    let winnerMessage = sprintf "Player %c WON. Yay. Good job." player
+    let loserMessage = sprintf "∴ player %c is a >>LOSER<< (in case that wasn't clear)." (opposite player)
+    printfn "%s" winnerMessage
+    printfn "%s" loserMessage
+    printfn "***********************************************************"
+    Console.WriteLine()
 
 let checkForWinnerInList L =
     
@@ -206,25 +192,14 @@ let checkForWinnerInList L =
         match L  with
         | [] -> false
         | hd::tl when hd <> 'X' && hd <> 'O' -> _checkForWinnerInList tl 0 player
-        | hd::_ when hd = player && (streak + 1) = NumToWin -> printWinMsg player
-                                                               true
+        | hd::_ when (hd = player) && ((streak + 1) = NumToWin)  -> printWinMsg player
+                                                                    true
         | hd::tl when hd = player -> _checkForWinnerInList tl (streak + 1) (player)
         | hd::tl when hd <> player -> _checkForWinnerInList tl 1 (hd)
         | _ ->  printfn "Case: some weird char appears?"
                 false
         
-    _checkForWinnerInList L 0 'X'
-    
-let isWinner board =
-    let allPossibleWinPaths = (getAllCols board) @ (getAllRows board) @ (getAllDiagonalForward board) @ (getAllDiagonalBackward board)
-//    printfn "%A" (getAllRows board)
-    let rec _checkAllWinPaths allPossibleWinPaths =
-        match allPossibleWinPaths with
-        | [] -> false
-        | hd::tl when (checkForWinnerInList hd) -> true
-        | _::tl -> _checkAllWinPaths tl
-    
-    _checkAllWinPaths allPossibleWinPaths
+    _checkForWinnerInList L 0 'O'
     
 let isTie board =
     
@@ -234,22 +209,51 @@ let isTie board =
     
     let rec _isTie row =
         match row with
-        | [] -> printfn "A tie. You both LOSE."
+        | [] -> printfn "... a tie. You both LOSE."
                 true
         | hd::_ when hd <> 'X' && hd <> 'O' -> false
         | _::tl -> _isTie tl
         
     _isTie topRow
-        
-
+    
+let isWinner board =
+    let allPossibleWinPaths = (getAllCols board) @ (getAllRows board) @ (getAllDiagonal board) 
+    let rec _checkAllWinPaths allPossibleWinPaths =
+        match allPossibleWinPaths with
+        | [] -> false
+        | hd::_ when (checkForWinnerInList hd) -> true
+        | _::tl -> _checkAllWinPaths tl
+    
+    _checkAllWinPaths allPossibleWinPaths
+    
+let welcomeSequence =
+    let welcomeMsg = sprintf "Welcome to Connect %d." NumToWin
+    let config = sprintf "//rows: %d | cols: %d" NumRows NumCols
+    Console.WriteLine()
+    printfn "%s" config
+    Console.WriteLine()
+    printfn "%s" welcomeMsg
+    Thread.Sleep (1000)
+    printfn "There can be only one winner."
+    Thread.Sleep (1000)
+    printfn "Go!"
+    Thread.Sleep (500)
+    Console.WriteLine()
+    
+let gameOverSequence board =
+    Thread.Sleep(6000)
+    printfn "Game Over."
+    Thread.Sleep(1000)
+    printBoard board true
+    
 [<EntryPoint>]
 let main argv =
-    printfn "Connect 4. Prepare to have fun."
+    
+    welcomeSequence
             
     let board = makeBoard
     
     printBoard board false
-//    printBoard board true
     
     let rec _playGame board playerTurn =
         match playerTurn with
@@ -259,16 +263,12 @@ let main argv =
         
         printBoard board false
         
-        let isWinner = (isWinner board)
-        
-        let isTie = (isTie board)
-        
-        match (isWinner || isTie) with
-        | true -> printfn "Game Over. We are done here."
-                  printBoard board true
-        | false -> _playGame board (opposite playerTurn)
-        
-        
+        let isWinner = (isWinner board) 
+
+        match (isWinner) with
+        | true -> gameOverSequence board
+        | false -> if (isTie board) then () else _playGame board (opposite playerTurn)
+
     _playGame board 'O'
     
     0 // return an integer exit code
