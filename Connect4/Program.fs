@@ -3,12 +3,10 @@
 //ob - connect 4
 
 open System
-open System
-open System
 
 //configurable settings
 let NumRows = 6
-let NumCols = 8
+let NumCols = 7
 let NumToWin = 4
 
 let makeBoard =
@@ -77,19 +75,22 @@ let rec playerMakeMove board player=
     printf "%c" player
     printfn " make a move."
     
-    let targetCol = Console.ReadLine() |> int
+    let _badInput msg =
+        printfn msg
+        Console.WriteLine()
+        printBoard board false
+        playerMakeMove board player
     
-    if targetCol >=  NumCols then printfn "Illegal move. try again"
-                                  Console.WriteLine()
-                                  printBoard board false
-                                  playerMakeMove board player
-                                              
-    elif board.[0, targetCol] = 'O' || board.[0, targetCol] = 'X' then printfn "column full. try again."
-                                                                       Console.WriteLine()
-                                                                       printBoard board false
-                                                                       playerMakeMove board player
-                                                              
-    else addCharToCol board player targetCol
+    let input = Console.ReadLine()
+    match input with
+    | input when String.IsNullOrEmpty input -> _badInput "submitted nothing. try again."
+    | input when not (Char.IsDigit input.[0]) -> _badInput "first input not column index. try again." 
+    | input ->  let inline charToInt c = int c - int '0' //https://stackoverflow.com/questions/42820232/f-convert-a-char-to-int
+                let targetCol = input.[0] |> charToInt         
+                if targetCol >=  NumCols then _badInput "Illegal move. try again."
+                elif board.[0, targetCol] = 'O' || board.[0, targetCol] = 'X' then _badInput "column full. try again."                                                                      
+                else addCharToCol board player targetCol
+                ()
     ()
                                                                       
 let opposite player =
@@ -107,7 +108,6 @@ let rec getCol (board: char[,]) rowIndexList (colIndex: int) answer=
 let getAllCols board =
     let matrixWidth = (Array2D.length2 board) //the length of a row (left and right)
     let matrixHeight = (Array2D.length1 board) //the length of a col (height)
-    
     let rowIndexList = [0..(matrixHeight - 1)] //index of each row (up and down)
     let colIndexList = [0..(matrixWidth - 1)] //index of each col (left and right)
     
@@ -127,7 +127,6 @@ let rec getRow (board: char [,]) colIndexList (rowIndex: int) answer =
 let getAllRows board =
     let matrixWidth = (Array2D.length2 board) //the length of a row (left and right)
     let matrixHeight = (Array2D.length1 board) //the length of a col (height)
-    
     let rowIndexList = [0..(matrixHeight - 1)] //index of each row (up and down)
     let colIndexList = [0..(matrixWidth - 1)] //index of each col (left and right)
     
@@ -140,30 +139,26 @@ let getAllRows board =
     _getAllRows board rowIndexList []
 
 let allCombinations max =
+    //ob - produce tuples that match to all possible board coordinates (and more! (wastefully))
+    let allValues = [0..(max - 1)]
     
-    let allValues2 = [0..(max - 1)]
-    
-    let rec _getTuplesGivenHd allValues givenHd acc =
-        match allValues with
+    let rec _getTuplesGivenHd allValuesForY givenHd acc =
+        match allValuesForY with
         | [] -> acc
         | hd::tl -> 
                     _getTuplesGivenHd tl givenHd ((givenHd, hd) :: acc) 
         
-    
-    let rec _allCombinations allValues acc =
-        match allValues with
+    let rec _allCombinations allValuesForX acc =
+        match allValuesForX with
         | [] -> acc
-        | hd::tl -> _allCombinations tl (_getTuplesGivenHd allValues2 hd [] @ acc)
+        | hd::tl -> _allCombinations tl (_getTuplesGivenHd allValues hd [] @ acc)
 
-    _allCombinations allValues2 []
-    
+    _allCombinations allValues []
 
 let getAllDiagonalForward (board: char [,]) =
-//    printfn "hey1"
     let dimensionList = [NumCols; NumRows]
     let allCombos = allCombinations (List.max dimensionList) 
     let acceptableCombos = List.filter (fun (x, y) -> x < NumCols && y < NumRows) allCombos
-    
     
     let allDiagonalSums = [0..(NumRows + NumCols - 2)]
     
@@ -231,18 +226,22 @@ let isWinner board =
     
     _checkAllWinPaths allPossibleWinPaths
     
-//let isTie board =
-//    let matrixWidth = (Array2D.length2 board) //the length of a row (left and right)
-//    let matrixHeight = (Array2D.length1 board) //the length of a col (height)
-//    
-//    let rowIndexList = [0..(matrixHeight - 1)] //index of each row (up and down)
-//    let colIndexList = [0..(matrixWidth - 1)] //index of each col (left and right)
-//
-//    let topRow = (getRow board colIndexList 0 [])
-//    printfn "%A" topRow
-//    if (List.tryFind (fun c -> c = ' ') topRow) <> None then false else  printfn("There was a tie. No one wins obviously.")
-//                                                                         true
-//     
+let isTie board =
+    
+    let matrixWidth = (Array2D.length2 board) //the length of a row (left and right)     
+    let colIndexList = [0..(matrixWidth - 1)] //index of each col (left and right)
+    let topRow = getRow board colIndexList 0 []
+    
+    let rec _isTie row =
+        match row with
+        | [] -> printfn "A tie. You both LOSE."
+                true
+        | hd::_ when hd <> 'X' && hd <> 'O' -> false
+        | _::tl -> _isTie tl
+        
+    _isTie topRow
+        
+
 [<EntryPoint>]
 let main argv =
     printfn "Connect 4. Prepare to have fun."
@@ -262,9 +261,9 @@ let main argv =
         
         let isWinner = (isWinner board)
         
-//        let isTie = (isTie board)
+        let isTie = (isTie board)
         
-        match (isWinner) with
+        match (isWinner || isTie) with
         | true -> printfn "Game Over. We are done here."
                   printBoard board true
         | false -> _playGame board (opposite playerTurn)
