@@ -2,9 +2,9 @@
 //20200321
 
 # What is this program?
-A configurable, command-line version of Connect 4. It allows for custom amounts of rows, columns, and win-streaks $^✝$.
+A configurable, command-line version of Connect 4. It allows for custom amounts of rows, columns, and win-streaks $^*$.
 
-$^✝$ so this is actually Connect $x$ where $x \in \N$
+$^*$ so this is actually Connect $x$ where $x \in \N$
 
 ![](img/full.png)
 ![](img/1by1.png)
